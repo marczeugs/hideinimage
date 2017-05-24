@@ -1,2 +1,4 @@
 # hideinimage
-Hide data in image
+Hide data in images
+
+Online version: https://marczeugs.github.io/framerate-analyzer/
