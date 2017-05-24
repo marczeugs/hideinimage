@@ -8,9 +8,9 @@
 		<script src="ImageM.js"></script>
 		
 		Text: <textarea id="text" cols="50" rows="10"></textarea><br/>
-		Bits stored per color channel: <input type="number" id="bPc" value="4" min="1" max="8"/><br/>
-		<button onclick="hideMessage();">Hide</button>
-		<button onclick="restoreMessage();">Restore</button> (if automatic download doesn't work right click image below and save)<br/>
+		Bits stored per color channel (1, 2 or 4; lower = less noticable): <input type="number" id="bPc" value="4" min="1" max="8"/><br/>
+		<button onclick="hideMessage();">Hide</button> (select image you want text to be hidden in)<br/>
+		<button onclick="restoreMessage();">Restore</button> (first original image, then modified one; if automatic download doesn't work right click image below and save)<br/>
 		<canvas id="saveCanvas">
 			How about using a browser from this century?
 		</canvas>
