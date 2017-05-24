@@ -10,11 +10,14 @@
 		Text: <textarea id="text" cols="50" rows="10"></textarea><br/>
 		Bits stored per color channel: <input type="number" id="bPc" value="4" min="1" max="8"/><br/>
 		<button onclick="hideMessage();">Hide</button>
-		<button onclick="restoreMessage();">Restore</button>
+		<button onclick="restoreMessage();">Restore</button> (if automatic download doesn't work right click image below and save)<br/>
+		<canvas id="saveCanvas">
+			How about using a browser from this century?
+		</canvas>
 		
 		<script>
 			function hideMessage() {
-				let img, imgChooser, saveCanvas = document.createElement('canvas');
+				let img, imgChooser, saveCanvas = document.querySelector('#saveCanvas');
 				let imgM;
 				let text = document.querySelector('#text').value, bPc = +document.querySelector('#bPc').value;
 				imgChooser = document.createElement('input');
@@ -39,17 +42,22 @@
 									
 									textPointer++;
 								}
+								else if(Math.floor(textPointer / (8 / bPc)) >= textData.length) {
+									break;
+								}
 							}
 							if(Math.floor(textPointer / (8 / bPc)) + 8 < textData.length) throw 'Image too small!';
 							
 							imgM.image.then(image => {
-								let a = document.createElement('a');
-								[saveCanvas.width, saveCanvas.height] = [img.width, img.height];
+								[saveCanvas.width, saveCanvas.height] = [image.width, image.height];
 								saveCanvas.getContext('2d').drawImage(image, 0, 0);
+								console.log(saveCanvas.width + ' ' + image.width);
+								
+								let a = document.createElement('a');
 								a.href = saveCanvas.toDataURL();
 								a.download = 'image.png';
 								a.click();
-							});
+							}).catch(e => { console.log(e); });
 						};
 						
 						img.src = fr.result;
