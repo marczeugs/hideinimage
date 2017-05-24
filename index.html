@@ -1,0 +1,133 @@
+<html>
+	<head>
+		<title>
+			Hide in Image
+		</title>
+	</head>
+	<body>
+		<script src="ImageM.js"></script>
+		
+		Text: <textarea id="text" cols="50" rows="10"></textarea><br/>
+		Bits stored per color channel: <input type="number" id="bPc" value="4" min="1" max="8"/><br/>
+		<button onclick="hideMessage();">Hide</button>
+		<button onclick="restoreMessage();">Restore</button>
+		
+		<script>
+			function hideMessage() {
+				let img, imgChooser, saveCanvas = document.createElement('canvas');
+				let imgM;
+				let text = document.querySelector('#text').value, bPc = +document.querySelector('#bPc').value;
+				imgChooser = document.createElement('input');
+				imgChooser.type = 'file';
+				imgChooser.accept = 'image/*';
+				
+				imgChooser.onchange = e => {
+					let fr = new FileReader();
+					
+					fr.onload = e => {
+						let img = new Image();
+						
+						img.onload = e => {
+							imgM = new ImageM(img);
+							
+							let counter = 0, textPointer = 0, encoder = new TextEncoder('utf-8'), textData;
+							textData = encoder.encode(text);
+							
+							for(let i = 0; i < imgM.data.length; i++) {
+								if(imgM.data[i] <= (255 - 2 ** bPc) && Math.floor(textPointer / (8 / bPc)) < textData.length) {
+									imgM.data[i] += (textData[Math.floor(textPointer / (8 / bPc))] >> ((8 - bPc) - ((textPointer % (8 / bPc)) * bPc))) & (2 ** bPc - 1);
+									
+									textPointer++;
+								}
+							}
+							if(Math.floor(textPointer / (8 / bPc)) + 8 < textData.length) throw 'Image too small!';
+							
+							imgM.image.then(image => {
+								let a = document.createElement('a');
+								[saveCanvas.width, saveCanvas.height] = [img.width, img.height];
+								saveCanvas.getContext('2d').drawImage(image, 0, 0);
+								a.href = saveCanvas.toDataURL();
+								a.download = 'image.png';
+								a.click();
+							});
+						};
+						
+						img.src = fr.result;
+					};
+					
+					fr.readAsDataURL(imgChooser.files[0]);
+				};
+				
+				imgChooser.click();
+			}
+			
+			function restoreMessage() {
+				let img, imgChooser, imgHChooser, saveCanvas = document.createElement('canvas');
+				let imgM, imgMH;
+				let bPc = +document.querySelector('#bPc').value;
+				imgChooser = document.createElement('input');
+				imgChooser.type = 'file';
+				imgChooser.accept = 'image/*';
+				imgHChooser = document.createElement('input');
+				imgHChooser.type = 'file';
+				imgHChooser.accept = 'image/*';
+				
+				imgHChooser.onchange = (e => {
+					let fr = new FileReader(), frH = new FileReader();
+					let img = new Image(), imgH = new Image();
+					
+					let done = false;
+					let loadComplete = () => {
+						if(!img.complete || !imgH.complete || done) return;
+						
+						imgM = new ImageM(img);
+						imgMH = new ImageM(imgH);
+							
+						let counter = 0, textPointer = 0, zeroChunks = 0, decoder = new TextDecoder('utf-8'), textData = [];
+						
+						for(let i = 0; i < imgM.data.length; i++) {
+							if(imgM.data[i] == imgMH.data[i] && imgM.data[i] <= (255 - 2 ** bPc)) {
+								zeroChunks++;
+								
+								if(zeroChunks == (8 / bPc)) {
+									break;
+								}
+							}
+							
+							if(imgM.data[i] <= (255 - 2 ** bPc)) {
+								if(textData.length <= Math.floor(textPointer / (8 / bPc))) textData.push(0);
+								
+								textData[Math.floor(textPointer / (8 / bPc))] += (imgMH.data[i] - imgM.data[i]) << ((8 - bPc) - ((textPointer % (8 / bPc)) * bPc));
+								
+								if((imgMH.data[i] - imgM.data[i]) != 0) zeroChunks = 0;
+								
+								textPointer++;
+							}
+						}
+						textData.pop();
+						
+						document.querySelector('#text').value = decoder.decode(Uint8ClampedArray.from(textData));
+						
+						done = true;
+					};
+					
+					fr.onload = e => {
+						img.onload = () => { loadComplete(); };
+						img.src = fr.result;
+					}
+					
+					frH.onload = e => {
+						imgH.onload = () => { loadComplete(); };
+						imgH.src = frH.result;
+					}
+					
+					fr.readAsDataURL(imgChooser.files[0]);
+					frH.readAsDataURL(imgHChooser.files[0]);
+				});
+				
+				imgChooser.click();
+				imgHChooser.click();
+			}
+		</script>
+	</body>
+</html>
